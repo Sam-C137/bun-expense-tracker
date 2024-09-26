@@ -11,6 +11,7 @@ import {
     TableRow,
 } from "@/components/ui/table.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
+import { relativeDate } from "@/lib/utils.ts";
 
 export const Route = createFileRoute("/_authenticated/expenses/")({
     component: Expenses,
@@ -37,6 +38,7 @@ function Expenses() {
                     <TableRow>
                         <TableHead>Id</TableHead>
                         <TableHead>Title</TableHead>
+                        <TableHead>Day</TableHead>
                         <TableHead className="text-right">Amount</TableHead>
                     </TableRow>
                 </TableHeader>
@@ -55,14 +57,20 @@ function Expenses() {
                                       <TableCell>
                                           <Skeleton className="h-4" />
                                       </TableCell>
+                                      <TableCell>
+                                          <Skeleton className="h-4" />
+                                      </TableCell>
                                   </TableRow>
                               ))
                         : data?.expenses?.map((expense) => (
                               <TableRow key={expense.id}>
                                   <TableCell>{expense.id}</TableCell>
                                   <TableCell>{expense.title}</TableCell>
+                                  <TableCell>
+                                      {relativeDate(new Date(expense.day))}
+                                  </TableCell>
                                   <TableCell className="text-right">
-                                      {expense.amount}
+                                      ${expense.amount}
                                   </TableCell>
                               </TableRow>
                           ))}

@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button.tsx";
 import { useForm } from "@tanstack/react-form";
 import { FieldInfo } from "@/components/ui/field-info.tsx";
 import api from "@/lib/api.ts";
+import { zodValidator } from "@tanstack/zod-form-adapter";
+import { createExpenseSchema } from "@server/shared/validators.ts";
+import { Calendar } from "@/components/ui/calendar.tsx";
 
 export const Route = createFileRoute("/_authenticated/create-expense/")({
     component: CreateExpense,
@@ -14,9 +17,11 @@ function CreateExpense() {
     const navigate = useNavigate();
 
     const form = useForm({
+        validatorAdapter: zodValidator(),
         defaultValues: {
             title: "",
-            amount: 0,
+            amount: "0",
+            day: new Date().toISOString(),
         },
         onSubmit: async ({ value, formApi }) => {
             const res = await api.expenses.$post({ json: value });
@@ -37,12 +42,15 @@ function CreateExpense() {
                     e.stopPropagation();
                     void form.handleSubmit();
                 }}
-                className="max-w-xl m-auto"
+                className="max-w-xl m-auto flex flex-col gap-y-4"
             >
                 <form.Field
                     name="title"
+                    validators={{
+                        onChange: createExpenseSchema.shape.title,
+                    }}
                     children={(field) => (
-                        <>
+                        <div>
                             <Label htmlFor={field.name}>Title</Label>
                             <Input
                                 id={field.name}
@@ -56,28 +64,55 @@ function CreateExpense() {
                                 placeholder="Text"
                             />
                             <FieldInfo field={field} />
-                        </>
+                        </div>
                     )}
                 />
 
                 <form.Field
                     name="amount"
+                    validators={{
+                        onChange: createExpenseSchema.shape.amount,
+                    }}
                     children={(field) => (
-                        <>
+                        <div>
                             <Label htmlFor={field.name}>Amount</Label>
                             <Input
                                 id={field.name}
                                 name={field.name}
                                 value={field.state.value}
                                 onBlur={field.handleBlur}
-                                onChange={(e) =>
-                                    field.handleChange(Number(e.target.value))
-                                }
+                                onChange={(e) => {
+                                    const { value } = e.target;
+                                    if (value === "" || isNaN(Number(value))) {
+                                        e.preventDefault();
+                                        e.target.value = field.state.value;
+                                    } else {
+                                        field.handleChange(e.target.value);
+                                    }
+                                }}
                                 type="number"
-                                placeholder="Text"
+                                placeholder="Ammount"
                             />
                             <FieldInfo field={field} />
-                        </>
+                        </div>
+                    )}
+                />
+                <form.Field
+                    name="day"
+                    children={(field) => (
+                        <div className="self-center">
+                            <Calendar
+                                mode="single"
+                                selected={new Date(field.state.value)}
+                                onSelect={(date) =>
+                                    field.handleChange(
+                                        date?.toISOString() ||
+                                            field.state.value,
+                                    )
+                                }
+                            />
+                            <FieldInfo field={field} />
+                        </div>
                     )}
                 />
                 <form.Subscribe

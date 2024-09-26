@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { profileQueryOptions } from "@/lib/api.ts";
+import { Button } from "@/components/ui/button.tsx";
 
 export const Route = createFileRoute("/_authenticated")({
     beforeLoad: async ({ context }) => {
@@ -20,11 +21,18 @@ export const Route = createFileRoute("/_authenticated")({
         const { user } = Route.useRouteContext();
         if (!user) {
             return (
-                <div>
-                    You have to login
-                    <a href="/api/login" className="block">
-                        Login
-                    </a>
+                <div className="flex flex-col gap-y-2 items-center">
+                    <p>You have to login or register</p>
+                    <Button asChild>
+                        <a href="/api/login" className="block w-full">
+                            Login
+                        </a>
+                    </Button>
+                    <Button asChild>
+                        <a href="/api/register" className="block w-full">
+                            Register
+                        </a>
+                    </Button>
                 </div>
             );
         }
