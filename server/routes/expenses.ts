@@ -7,21 +7,35 @@ import {
     expenses as expensesTable,
     insertExpenseSchema,
 } from "../db/schema/expenses.ts";
-import { and, desc, eq, sum } from "drizzle-orm";
+import { and, count, desc, eq, sum } from "drizzle-orm";
 
 export const expenses = new Hono()
     .get("/", getUser, async (c) => {
         const { user } = c.var;
+        const limit = parseInt(c.req.query("limit") || "10");
+        const page = parseInt(c.req.query("page") || "1");
 
-        const expenses = await db
-            .select()
-            .from(expensesTable)
-            .where(eq(expensesTable.user_id, user.id))
-            .orderBy(desc(expensesTable.createdAt))
-            .limit(10);
+        const [expenses, total] = await Promise.all([
+            db
+                .select()
+                .from(expensesTable)
+                .where(eq(expensesTable.user_id, user.id))
+                .orderBy(desc(expensesTable.createdAt))
+                .limit(limit)
+                .offset((page - 1) * limit),
+
+            db
+                .select({ count: count() })
+                .from(expensesTable)
+                .where(eq(expensesTable.user_id, user.id)),
+        ]);
 
         return c.json({
             expenses,
+            total: total[0].count,
+            first: page === 1,
+            last: expenses.length < limit,
+            pages: Math.ceil(total[0].count / limit),
         });
     })
     .post("/", getUser, zValidator("json", createExpenseSchema), async (c) => {
@@ -36,7 +50,8 @@ export const expenses = new Hono()
         const result = await db
             .insert(expensesTable)
             .values(validatedExpense)
-            .returning();
+            .returning()
+            .then((r) => r[0]);
 
         c.status(201);
         return c.json(result);

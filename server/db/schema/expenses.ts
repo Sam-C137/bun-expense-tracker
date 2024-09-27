@@ -35,5 +35,6 @@ export const insertExpenseSchema = createInsertSchema(expenses, {
     amount: z
         .string()
         .regex(/^\d+(\.\d{1,2})?$/, "Amount must be a valid monetary value"),
+    day: z.string().refine((d) => !isNaN(Date.parse(d))),
 });
 export const selectExpenseSchema = createSelectSchema(expenses);
