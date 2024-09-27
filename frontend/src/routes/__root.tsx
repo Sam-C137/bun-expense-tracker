@@ -4,6 +4,10 @@ import {
     Outlet,
 } from "@tanstack/react-router";
 import { QueryClient } from "@tanstack/react-query";
+import { Toaster } from "@/components/ui/sonner";
+import { useTheme } from "next-themes";
+import { Moon, Sun } from "lucide-react";
+import { Button } from "@/components/ui/button.tsx";
 
 interface RouterContext {
     queryClient: QueryClient;
@@ -20,11 +24,14 @@ function Root() {
             <div className="flex p-4 gap-2 max-w-2xl mx-auto">
                 <Outlet />
             </div>
+            <Toaster />
         </>
     );
 }
 
 function Nav() {
+    const { theme, setTheme } = useTheme();
+
     return (
         <nav className="flex justify-between p-2 max-w-2xl mx-auto items-baseline">
             <Link to="/">
@@ -43,6 +50,19 @@ function Nav() {
                 <Link to="/profile" className="[&.active]:font-bold">
                     Profile
                 </Link>
+                <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() =>
+                        setTheme(theme === "dark" ? "light" : "dark")
+                    }
+                >
+                    {theme === "dark" ? (
+                        <Sun className="size-4" />
+                    ) : (
+                        <Moon className="size-4" />
+                    )}
+                </Button>
             </div>
         </nav>
     );

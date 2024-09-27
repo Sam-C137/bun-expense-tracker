@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { profileQueryOptions } from "@/lib/api.ts";
 import { Loader2 } from "lucide-react";
 import {
     Avatar,
@@ -8,8 +7,9 @@ import {
     AvatarImage,
 } from "@/components/ui/avatar.tsx";
 import { Button } from "@/components/ui/button.tsx";
+import { profileQueryOptions } from "@/lib/queries.ts";
 
-export const Route = createFileRoute("/_authenticated/profile/")({
+export const Route = createFileRoute("/__authenticated/profile/")({
     component: Profile,
 });
 
@@ -32,7 +32,7 @@ function Profile() {
                         src={
                             data.user.picture?.endsWith("blank&size=200")
                                 ? undefined
-                                : (data.user.picture as string)
+                                : data.user.picture || undefined
                         }
                     />
                     <AvatarFallback>

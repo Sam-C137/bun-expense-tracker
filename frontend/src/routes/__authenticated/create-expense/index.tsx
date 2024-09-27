@@ -4,17 +4,18 @@ import { Input } from "@/components/ui/input.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { useForm } from "@tanstack/react-form";
 import { FieldInfo } from "@/components/ui/field-info.tsx";
-import api from "@/lib/api.ts";
 import { zodValidator } from "@tanstack/zod-form-adapter";
 import { createExpenseSchema } from "@server/shared/validators.ts";
 import { Calendar } from "@/components/ui/calendar.tsx";
+import { useCreateExpense } from "@/hooks/useExpense.ts";
 
-export const Route = createFileRoute("/_authenticated/create-expense/")({
+export const Route = createFileRoute("/__authenticated/create-expense/")({
     component: CreateExpense,
 });
 
 function CreateExpense() {
     const navigate = useNavigate();
+    const expenseMutation = useCreateExpense();
 
     const form = useForm({
         validatorAdapter: zodValidator(),
@@ -24,10 +25,7 @@ function CreateExpense() {
             day: new Date().toISOString(),
         },
         onSubmit: async ({ value, formApi }) => {
-            const res = await api.expenses.$post({ json: value });
-            if (!res.ok) {
-                throw new Error("Failed to create expense");
-            }
+            expenseMutation.mutate(value);
             formApi.reset();
             await navigate({ to: "/expenses" });
         },
@@ -110,6 +108,7 @@ function CreateExpense() {
                                             field.state.value,
                                     )
                                 }
+                                id={field.name}
                             />
                             <FieldInfo field={field} />
                         </div>

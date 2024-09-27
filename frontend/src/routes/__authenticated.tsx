@@ -1,8 +1,8 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
-import { profileQueryOptions } from "@/lib/api.ts";
 import { Button } from "@/components/ui/button.tsx";
+import { profileQueryOptions } from "@/lib/queries.ts";
 
-export const Route = createFileRoute("/_authenticated")({
+export const Route = createFileRoute("/__authenticated")({
     beforeLoad: async ({ context }) => {
         const { queryClient } = context;
         try {
