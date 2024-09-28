@@ -8,7 +8,7 @@ import {
 interface PaginationItemsProps {
     totalPages: number;
     page: number;
-    goTo: (page: number) => void;
+    goTo: (page: number) => void | Promise<void>;
 }
 
 export function PaginationItems({
@@ -18,17 +18,17 @@ export function PaginationItems({
 }: PaginationItemsProps) {
     const list = getPaginationRange(totalPages, page);
 
-    function handleChange(value: number | string) {
+    async function handleChange(value: number | string) {
         switch (value) {
             case "... ":
-                goTo(1);
+                await goTo(1);
                 break;
             case " ...":
-                goTo(totalPages);
+                await goTo(totalPages);
                 break;
             default:
                 if (typeof value === "number") {
-                    goTo(value);
+                    await goTo(value);
                 }
                 break;
         }
@@ -37,7 +37,11 @@ export function PaginationItems({
     return (
         <>
             {list.map((item) => (
-                <PaginationItem key={item}>
+                <PaginationItem
+                    key={item}
+                    aria-current={page === item}
+                    className="aria-[current=true]:border aria-[current=true]:border-muted-foreground rounded"
+                >
                     {typeof item === "string" ? (
                         <PaginationEllipsis
                             onClick={() => handleChange(item)}

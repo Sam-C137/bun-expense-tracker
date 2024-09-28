@@ -26,15 +26,19 @@ export function relativeDate(from: Date) {
     }
 }
 
+export async function sleep(delay = 500) {
+    await new Promise((resolve) => setTimeout(resolve, delay));
+}
+
 function range(start: number, end: number) {
     return Array.from({ length: end - start + 1 }).map((_, i) => i + start);
 }
 
-export const getPaginationRange = (
+export function getPaginationRange(
     totalPages: number,
     page: number,
     siblings: number = 1,
-): (string | number)[] => {
+): (string | number)[] {
     const arrTotal = 7 + siblings;
 
     if (totalPages === 1) {
@@ -65,4 +69,4 @@ export const getPaginationRange = (
         const middleRange = range(leftSibblingIndex, rightSibblingIndex);
         return [1, "... ", ...middleRange, " ...", totalPages];
     }
-};
+}

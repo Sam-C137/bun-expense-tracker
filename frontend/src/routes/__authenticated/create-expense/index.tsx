@@ -1,4 +1,8 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import {
+    createFileRoute,
+    useNavigate,
+    useSearch,
+} from "@tanstack/react-router";
 import { Label } from "@/components/ui/label.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { Button } from "@/components/ui/button.tsx";
@@ -7,27 +11,55 @@ import { FieldInfo } from "@/components/ui/field-info.tsx";
 import { zodValidator } from "@tanstack/zod-form-adapter";
 import { createExpenseSchema } from "@server/shared/validators.ts";
 import { Calendar } from "@/components/ui/calendar.tsx";
-import { useCreateExpense } from "@/hooks/useExpense.ts";
+import { useCreateExpense, useEditExpense } from "@/hooks/useExpense.ts";
+import { useExpenseStore } from "@/store/expense.store.ts";
+
+type CreateExpenseSearchParams = {
+    page?: number;
+};
 
 export const Route = createFileRoute("/__authenticated/create-expense/")({
     component: CreateExpense,
+    validateSearch: (
+        search: Record<string, unknown>,
+    ): CreateExpenseSearchParams => {
+        return {
+            page: search.page ? Number(search.page) : undefined,
+        };
+    },
 });
 
 function CreateExpense() {
     const navigate = useNavigate();
+    const page = useSearch({
+        from: "/__authenticated/create-expense/",
+        select: (search) => search.page,
+    });
     const expenseMutation = useCreateExpense();
+    const editExpenseMutation = useEditExpense(page || 1);
+    const existingExpense = useExpenseStore((state) => state.expense);
+    const removeExpense = useExpenseStore((state) => state.removeExpense);
 
     const form = useForm({
         validatorAdapter: zodValidator(),
         defaultValues: {
-            title: "",
-            amount: "0",
-            day: new Date().toISOString(),
+            title: existingExpense?.title || "",
+            amount: existingExpense?.amount || "0",
+            day: existingExpense?.day || new Date().toISOString(),
         },
         onSubmit: async ({ value, formApi }) => {
-            expenseMutation.mutate(value);
+            if (existingExpense) {
+                editExpenseMutation.mutate({
+                    ...existingExpense,
+                    ...value,
+                });
+                removeExpense();
+                await navigate({ to: "/expenses", search: { page } });
+            } else {
+                expenseMutation.mutate(value);
+                await navigate({ to: "/expenses" });
+            }
             formApi.reset();
-            await navigate({ to: "/expenses" });
         },
     });
 
@@ -117,18 +149,37 @@ function CreateExpense() {
                 <form.Subscribe
                     selector={(state) => [state.canSubmit, state.isSubmitting]}
                     children={([canSubmit, isSubmitting]) => (
-                        <Button
-                            className="mt-4"
-                            type="submit"
-                            disabled={!canSubmit}
-                        >
-                            {isSubmitting
-                                ? "Creating Expense..."
-                                : "Create Expense"}
-                        </Button>
+                        <SubmitButton
+                            isSubmitting={isSubmitting}
+                            canSubmit={canSubmit}
+                            isEditing={Boolean(existingExpense)}
+                        />
                     )}
                 />
             </form>
         </div>
+    );
+}
+
+interface SubmitButtonProps {
+    canSubmit: boolean;
+    isSubmitting: boolean;
+    isEditing: boolean;
+}
+
+function SubmitButton({
+    canSubmit,
+    isSubmitting,
+    isEditing,
+}: SubmitButtonProps) {
+    const textMapping = {
+        base: isEditing ? "Edit Expense" : "Create Expense",
+        pending: isEditing ? "Editing Expense" : "Creating Expense",
+    };
+
+    return (
+        <Button className="mt-4" type="submit" disabled={!canSubmit}>
+            {isSubmitting ? textMapping.pending : textMapping.base}
+        </Button>
     );
 }

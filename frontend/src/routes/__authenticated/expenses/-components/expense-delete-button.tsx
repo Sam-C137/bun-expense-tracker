@@ -2,8 +2,13 @@ import { useDeleteExpense } from "@/hooks/useExpense.ts";
 import { Button } from "@/components/ui/button.tsx";
 import { Loader2, Trash } from "lucide-react";
 
-export function ExpenseDeleteButton({ id }: { id: number }) {
-    const expenseMutation = useDeleteExpense(id);
+interface ExpenseDeleteButtonProps {
+    id: number;
+    page: number;
+}
+
+export function ExpenseDeleteButton({ id, page }: ExpenseDeleteButtonProps) {
+    const expenseMutation = useDeleteExpense(id, page);
 
     return (
         <Button

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useSearch } from "@tanstack/react-router";
 import {
     Table,
     TableBody,
@@ -20,32 +20,42 @@ import {
     PaginationNext,
     PaginationPrevious,
 } from "@/components/ui/pagination.tsx";
-import { PaginationItems } from "@/routes/__authenticated/expenses/-components/pagination-items.tsx";
-import { ExpenseDeleteButton } from "@/routes/__authenticated/expenses/-components/expense-delete-button.tsx";
+import { PaginationItems } from "./-components/pagination-items.tsx";
+import { ExpenseDeleteButton } from "./-components/expense-delete-button.tsx";
+import { ExpenseMoreOptions } from "./-components/expense-more-options.tsx";
+
+type ExpensesSearchParams = {
+    page?: number;
+};
 
 export const Route = createFileRoute("/__authenticated/expenses/")({
     component: Expenses,
+    validateSearch: (search: Record<string, unknown>): ExpensesSearchParams => {
+        return {
+            page: Number(search.page) || 1,
+        };
+    },
 });
 
 function Expenses() {
+    const { page: initialPage } = useSearch({ strict: false });
     const {
         query: { data, isPending, isPlaceholderData },
         next,
         prev,
         page,
         goTo,
-    } = useGetExpenses();
-    const { data: createExpenseLoadingData } = useQuery(
-        optimisticExpenseQueryOptions,
-    );
+    } = useGetExpenses({ initialPage });
+    const { data: optimisticExpense } = useQuery(optimisticExpenseQueryOptions);
     const isPrevDisabled = page === 1;
     const isNextDisabled = isPlaceholderData || data?.last;
 
-    const Loading = () => (
+    const Loading = ({ children }: React.PropsWithChildren) => (
         <TableRow>
             <TableCell>
                 <Skeleton className="h-4" />
             </TableCell>
+            <TableCell>{children || <Skeleton className="h-4" />}</TableCell>
             <TableCell>
                 <Skeleton className="h-4" />
             </TableCell>
@@ -72,27 +82,12 @@ function Expenses() {
                         <TableHead>Day</TableHead>
                         <TableHead>Amount</TableHead>
                         <TableHead className="text-right">Delete</TableHead>
+                        <TableHead></TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {createExpenseLoadingData?.expense && (
-                        <TableRow>
-                            <TableCell>
-                                <Skeleton className="h-4" />
-                            </TableCell>
-                            <TableCell>
-                                {createExpenseLoadingData?.expense?.title}
-                            </TableCell>
-                            <TableCell>
-                                <Skeleton className="h-4" />
-                            </TableCell>
-                            <TableCell>
-                                <Skeleton className="h-4" />
-                            </TableCell>
-                            <TableCell>
-                                <Skeleton className="h-4" />
-                            </TableCell>
-                        </TableRow>
+                    {optimisticExpense?.expense && (
+                        <Loading>{optimisticExpense?.expense?.title}</Loading>
                     )}
                     {isPending
                         ? Array(3)
@@ -107,7 +102,16 @@ function Expenses() {
                                   </TableCell>
                                   <TableCell>${expense.amount}</TableCell>
                                   <TableCell className="text-right">
-                                      <ExpenseDeleteButton id={expense.id} />
+                                      <ExpenseDeleteButton
+                                          id={expense.id}
+                                          page={page}
+                                      />
+                                  </TableCell>
+                                  <TableCell>
+                                      <ExpenseMoreOptions
+                                          expense={expense}
+                                          page={page}
+                                      />
                                   </TableCell>
                               </TableRow>
                           ))}
@@ -118,8 +122,9 @@ function Expenses() {
                                     <PaginationContent>
                                         <PaginationItem>
                                             <PaginationPrevious
-                                                onClick={() =>
-                                                    !isPrevDisabled && prev()
+                                                onClick={async () =>
+                                                    !isPrevDisabled &&
+                                                    (await prev())
                                                 }
                                                 aria-disabled={isPrevDisabled}
                                             />
@@ -131,8 +136,9 @@ function Expenses() {
                                         />
                                         <PaginationItem>
                                             <PaginationNext
-                                                onClick={() =>
-                                                    !isNextDisabled && next()
+                                                onClick={async () =>
+                                                    !isNextDisabled &&
+                                                    (await next())
                                                 }
                                                 aria-disabled={isNextDisabled}
                                             />
