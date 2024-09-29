@@ -21,6 +21,7 @@ function Root() {
     return (
         <>
             <Nav />
+            <hr />
             <div className="flex p-4 gap-2 max-w-2xl mx-auto">
                 <Outlet />
             </div>

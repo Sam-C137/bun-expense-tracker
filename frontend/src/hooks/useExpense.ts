@@ -6,7 +6,10 @@ import {
 } from "@tanstack/react-query";
 import api from "@/lib/api.ts";
 import z from "zod";
-import { createExpenseSchema, Expense } from "@server/shared/validators.ts";
+import {
+    createExpenseSchema,
+    type Expense,
+} from "@server/shared/validators.ts";
 import { optimisticExpenseQueryOptions } from "@/lib/queries.ts";
 import { toast } from "sonner";
 import { useState } from "react";

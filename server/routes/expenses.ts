@@ -12,8 +12,8 @@ import { and, count, desc, eq, sum } from "drizzle-orm";
 export const expenses = new Hono()
     .get("/", getUser, async (c) => {
         const { user } = c.var;
-        const limit = parseInt(c.req.query("limit") || "10");
-        const page = parseInt(c.req.query("page") || "1");
+        const limit = Number(c.req.query("limit") || "10");
+        const page = Number(c.req.query("page") || "1");
 
         const [expenses, total] = await Promise.all([
             db
@@ -68,7 +68,7 @@ export const expenses = new Hono()
         return c.json({ total });
     })
     .get("/:id{[0-9]+}", getUser, async (c) => {
-        const id = Number.parseInt(c.req.param("id"));
+        const id = Number(c.req.param("id"));
         const { user } = c.var;
         const expense = await db
             .select()
@@ -107,5 +107,37 @@ export const expenses = new Hono()
 
         return c.json(deleted);
     })
-    .delete()
-    .put();
+    .put(
+        "/:id{[0-9]+}",
+        getUser,
+        zValidator("json", createExpenseSchema),
+        async (c) => {
+            const id = Number.parseInt(c.req.param("id"));
+            const { user } = c.var;
+            const expense = c.req.valid("json");
+
+            const validatedExpense = insertExpenseSchema.parse({
+                ...expense,
+                user_id: user.id,
+            });
+
+            const updated = await db
+                .update(expensesTable)
+                .set(validatedExpense)
+                .where(
+                    and(
+                        eq(expensesTable.user_id, user.id),
+                        eq(expensesTable.id, id),
+                    ),
+                )
+                .returning()
+                .then((r) => r[0]);
+
+            if (!updated) {
+                return c.notFound();
+            }
+
+            return c.json(updated);
+        },
+    )
+    .delete();
