@@ -23,5 +23,12 @@ export default defineConfig({
     },
     build: {
         sourcemap: false,
+        chunkSizeWarningLimit: 1000,
+        rollupOptions: {
+            onwarn(warning, warn) {
+                if (warning.code === "SOURCEMAP_ERROR") return;
+                warn(warning);
+            },
+        },
     },
 });
